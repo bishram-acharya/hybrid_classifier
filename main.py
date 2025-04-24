@@ -3,8 +3,8 @@ Main entry point for the hybrid classifier.
 """
 import torch
 import numpy as np
-from . import config
-# from .config import TRAIN_DIR, TEST_DIR, DEVICE, SEED
+import config
+from .config import TRAIN_DIR, TEST_DIR, DEVICE, SEED
 from .data.dataloaders import get_dataloaders
 from .models.hybridnet import HybridNet, get_vit_processor
 from .utils.lbp import extract_lbp_features
