@@ -27,7 +27,9 @@ def main(backbone_model=None):
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(config.SEED)
     
-    
+    # Override backbone model if specified
+    if backbone_model:
+        config.BACKBONE_MODEL = backbone_model
     
     print(f"Using device: {config.DEVICE}")
     print(f"Using backbone model: {config.BACKBONE_MODEL}")
