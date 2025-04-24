@@ -4,7 +4,7 @@ Main entry point for the hybrid classifier.
 import torch
 import numpy as np
 import config
-from .config import TRAIN_DIR, TEST_DIR, DEVICE, SEED
+# from .config import TRAIN_DIR, TEST_DIR, DEVICE, SEED
 from .data.dataloaders import get_dataloaders
 from .models.hybridnet import HybridNet, get_vit_processor
 from .utils.lbp import extract_lbp_features
@@ -22,25 +22,25 @@ def main(backbone_model=None):
                                         Options: 'efficientnet', 'resnet'
     """
     # Set seeds for reproducibility
-    torch.manual_seed(SEED)
-    np.random.seed(SEED)
+    torch.manual_seed(config.SEED)
+    np.random.seed(config.SEED)
     if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(SEED)
+        torch.cuda.manual_seed_all(config.SEED)
     
     # Override backbone model if specified
     if backbone_model:
         config.BACKBONE_MODEL = backbone_model
     
-    print(f"Using device: {DEVICE}")
+    print(f"Using device: {config.DEVICE}")
     print(f"Using backbone model: {config.BACKBONE_MODEL}")
     
     # Get dataloaders
     train_loader, val_loader, test_loader, num_classes, class_names = get_dataloaders(
-        TRAIN_DIR, TEST_DIR
+        config.TRAIN_DIR, config.TEST_DIR
     )
     
     # Initialize model and processor
-    model = HybridNet(num_classes=num_classes, backbone=config.BACKBONE_MODEL).to(DEVICE)
+    model = HybridNet(num_classes=num_classes, backbone=config.BACKBONE_MODEL).to(config.DEVICE)
     vit_processor = get_vit_processor()
     
     # Train model
