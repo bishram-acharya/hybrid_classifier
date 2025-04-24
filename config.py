@@ -21,6 +21,9 @@ LBP_DIM = 10
 VIT_DIM = 197 * 768
 VIT_MODEL = "google/vit-base-patch16-224-in21k"
 
+# Model selection - choose between 'efficientnet' and 'resnet'
+BACKBONE_MODEL = 'efficientnet'
+
 # Seeds for reproducibility
 SEED = 42
 
