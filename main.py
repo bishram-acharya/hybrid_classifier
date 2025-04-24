@@ -3,7 +3,7 @@ Main entry point for the hybrid classifier.
 """
 import torch
 import numpy as np
-from .config import TRAIN_DIR, TEST_DIR, DEVICE, SEED
+from .config import TRAIN_DIR, TEST_DIR, DEVICE, SEED, BACKBONE_MODEL
 from .data.dataloaders import get_dataloaders
 from .models.hybridnet import HybridNet, get_vit_processor
 from .utils.lbp import extract_lbp_features
@@ -28,10 +28,10 @@ def main(backbone_model=None):
     
     # Override backbone model if specified
     if backbone_model:
-        config.BACKBONE_MODEL = backbone_model
+        BACKBONE_MODEL = backbone_model
     
     print(f"Using device: {DEVICE}")
-    print(f"Using backbone model: {config.BACKBONE_MODEL}")
+    print(f"Using backbone model: {BACKBONE_MODEL}")
     
     # Get dataloaders
     train_loader, val_loader, test_loader, num_classes, class_names = get_dataloaders(
@@ -39,7 +39,7 @@ def main(backbone_model=None):
     )
     
     # Initialize model and processor
-    model = HybridNet(num_classes=num_classes, backbone=config.BACKBONE_MODEL).to(DEVICE)
+    model = HybridNet(num_classes=num_classes, backbone=BACKBONE_MODEL).to(DEVICE)
     vit_processor = get_vit_processor()
     
     # Train model
