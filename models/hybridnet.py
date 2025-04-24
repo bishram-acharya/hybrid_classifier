@@ -3,6 +3,7 @@ HybridNet model combining CNN, Vision Transformer and LBP features.
 """
 import torch
 import torch.nn as nn
+from torchvision import transforms 
 from torchvision.models import efficientnet_b0, EfficientNet_B0_Weights
 from transformers import ViTModel, ViTImageProcessor
 from ..config import LBP_DIM, VIT_DIM, VIT_MODEL, DEVICE
