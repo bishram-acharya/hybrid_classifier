@@ -45,11 +45,7 @@ class HybridNet(nn.Module):
             nn.ReLU(),
             nn.Dropout(0.5),
 
-            nn.Linear(512, 256),  # Third hidden layer
-            nn.ReLU(),
-            nn.Dropout(0.5),
-
-            nn.Linear(256, num_classes)  # Output layer
+            nn.Linear(512, num_classes)  # Output layer
         )
     
     def forward(self, img_tensor, vit_inputs, lbp_feat):
