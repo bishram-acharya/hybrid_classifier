@@ -80,14 +80,42 @@ def evaluate_model(model, test_loader, vit_processor, extract_lbp_fn, class_name
         print(f"ROC AUC calculation failed: {e}")
 
     # Helper function to plot examples
-    def plot_examples(examples, title_prefix):
-        for class_id in [0, 1]:
-            print(f"\n{title_prefix} - True Class {class_names[class_id]} (ID: {class_id}):")
-            for img, true_label, pred_label, prob in examples[class_id]:
-                plt.imshow(img.permute(1, 2, 0).cpu().numpy())
-                plt.title(f"True: {class_names[true_label]} | Pred: {class_names[pred_label]} ({prob:.2f})")
-                plt.axis('off')
-                plt.show()
+    def plot_examples_grid(correct_examples, wrong_examples, class_names):
+        fig, axes = plt.subplots(4, 5, figsize=(20, 16))  # 4 rows, 5 columns
+        fig.subplots_adjust(hspace=0.4)
+        
+        row_titles = [
+            f"Correct - {class_names[0]}",
+            f"Wrong - {class_names[0]}",
+            f"Correct - {class_names[1]}",
+            f"Wrong - {class_names[1]}"
+        ]
+        
+        for row in range(4):
+            if row == 0:
+                examples = correct_examples[0]
+            elif row == 1:
+                examples = wrong_examples[0]
+            elif row == 2:
+                examples = correct_examples[1]
+            elif row == 3:
+                examples = wrong_examples[1]
+            
+            for col in range(5):
+                ax = axes[row, col]
+                if col < len(examples):
+                    img, true_label, pred_label, prob = examples[col]
+                    img = img.permute(1, 2, 0).cpu().numpy()
+                    ax.imshow(img)
+                    ax.set_title(f"T:{class_names[true_label]}\nP:{class_names[pred_label]} ({prob:.2f})", fontsize=10)
+                ax.axis('off')
+            
+            # Add row title to the left
+            axes[row, 0].set_ylabel(row_titles[row], fontsize=14, rotation=0, labelpad=70, va='center')
+
+        plt.tight_layout()
+        plt.show()
+
 
     # Plot examples
     print("\nCorrect Predictions Examples:")
