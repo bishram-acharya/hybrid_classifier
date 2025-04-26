@@ -37,15 +37,10 @@ class HybridNet(nn.Module):
             
         # Combined classifier
         self.classifier = nn.Sequential(
-            nn.Linear(self.feature_dim + vit_dim + lbp_dim, 1024),  # First hidden layer
+            nn.Linear(self.feature_dim + vit_dim + lbp_dim, 512),
             nn.ReLU(),
             nn.Dropout(0.5),
-
-            nn.Linear(1024, 512),  # Second hidden layer
-            nn.ReLU(),
-            nn.Dropout(0.5),
-
-            nn.Linear(512, num_classes)  # Output layer
+            nn.Linear(512, num_classes)
         )
     
     def forward(self, img_tensor, vit_inputs, lbp_feat):
