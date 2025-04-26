@@ -60,11 +60,10 @@ class HybridNet(nn.Module):
         
         # Get ViT features
         with torch.no_grad():
-            vit_out = self.vit(**vit_inputs).last_hidden_state[:, 0, :]  # CLS token (B, 768)
-        vit_out_flat = vit_out.repeat(1, 197)
+            vit_out = self.vit(**vit_inputs).last_hidden_state[:, 0, :]  # (B, 768)
         
         # Combine features
-        combined = torch.cat([cnn_feat, vit_out_flat, lbp_feat], dim=1)
+        combined = torch.cat([cnn_feat, vit_out, lbp_feat], dim=1)  # (B, total_dim)
         return self.classifier(combined)
 
 def get_vit_processor():
