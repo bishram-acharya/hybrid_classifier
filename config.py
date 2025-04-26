@@ -18,7 +18,7 @@ VAL_SPLIT = 0.2
 
 # Model parameters
 LBP_DIM = 10
-VIT_DIM = 197 * 768
+VIT_DIM = 768
 VIT_MODEL = "google/vit-base-patch16-224-in21k"
 
 # Model selection - choose between 'efficientnet' and 'resnet'
