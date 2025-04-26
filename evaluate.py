@@ -4,6 +4,7 @@ Evaluation functionality for the hybrid classifier.
 import torch
 from tqdm import tqdm
 from sklearn.metrics import classification_report, roc_auc_score, roc_curve, auc
+from sklearn.preprocessing import label_binarize
 import matplotlib.pyplot as plt
 from .models.hybridnet import prepare_batch
 from .utils.visualization import plot_confusion_matrix
