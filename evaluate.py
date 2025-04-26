@@ -119,9 +119,9 @@ def evaluate_model(model, test_loader, vit_processor, extract_lbp_fn, class_name
 
     # Plot examples
     print("\nCorrect Predictions Examples:")
-    plot_examples(correct_examples, "Correct")
+    plot_examples_grid(correct_examples, "Correct")
 
     print("\nWrong Predictions Examples:")
-    plot_examples(wrong_examples, "Wrong")
+    plot_examples_grid(wrong_examples, "Wrong")
 
     return y_true, y_pred
