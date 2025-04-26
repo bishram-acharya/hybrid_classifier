@@ -5,8 +5,12 @@ from tqdm import tqdm
 from sklearn.metrics import classification_report, roc_auc_score, roc_curve
 from .models.hybridnet import prepare_batch
 from .utils.visualization import plot_confusion_matrix
+from .utils.gradcam import GradCAM
 
 def plot_examples_grid(correct_examples, wrong_examples, class_names):
+    """
+    Plot a grid of examples showing correct and incorrect predictions.
+    """
     fig, axes = plt.subplots(4, 5, figsize=(20, 16))  # 4 rows, 5 columns
     fig.subplots_adjust(hspace=0.4)
     
@@ -42,11 +46,99 @@ def plot_examples_grid(correct_examples, wrong_examples, class_names):
     plt.tight_layout()
     plt.show()
 
+def plot_examples_with_gradcam(correct_examples, wrong_examples, class_names, model, vit_processor, extract_lbp_fn, device):
+    """
+    Plot examples with GradCAM visualizations in a grid
+    """
+    # Initialize GradCAM
+    grad_cam = GradCAM(model)
+    
+    # Create figure with 4 rows (2 classes x correct/wrong) and 5 columns
+    # Each column has 3 images (original, heatmap, overlay)
+    fig, axes = plt.subplots(4, 15, figsize=(25, 16))
+    fig.subplots_adjust(hspace=0.4, wspace=0.1)
+    
+    row_titles = [
+        f"Correct - {class_names[0]}",
+        f"Wrong - {class_names[0]}",
+        f"Correct - {class_names[1]}",
+        f"Wrong - {class_names[1]}"
+    ]
+    
+    # Process each row
+    for row in range(4):
+        if row == 0:
+            examples = correct_examples[0]
+            title = f"Correct - {class_names[0]}"
+        elif row == 1:
+            examples = wrong_examples[0]
+            title = f"Wrong - {class_names[0]}"
+        elif row == 2:
+            examples = correct_examples[1]
+            title = f"Correct - {class_names[1]}"
+        elif row == 3:
+            examples = wrong_examples[1]
+            title = f"Wrong - {class_names[1]}"
+        
+        # For each example in the row (max 5)
+        for col in range(5):
+            if col < len(examples):
+                img_tensor, true_label, pred_label, prob = examples[col]
+                
+                # Generate GradCAM visualizations
+                orig, heatmap, overlay = grad_cam.process_example(
+                    img_tensor, 
+                    pred_label, 
+                    model, 
+                    vit_processor, 
+                    extract_lbp_fn, 
+                    device
+                )
+                
+                # Plot original image
+                ax = axes[row, col*3]
+                ax.imshow(orig)
+                if row == 0:
+                    ax.set_title(f"Example {col+1}", fontsize=10)
+                ax.set_xlabel(f"T:{class_names[true_label]}\nP:{class_names[pred_label]} ({prob:.2f})", fontsize=8)
+                ax.axis('off')
+                
+                # Plot heatmap
+                ax = axes[row, col*3+1]
+                ax.imshow(heatmap)
+                if row == 0:
+                    ax.set_title("Heatmap", fontsize=10)
+                ax.axis('off')
+                
+                # Plot overlay
+                ax = axes[row, col*3+2]
+                ax.imshow(overlay)
+                if row == 0:
+                    ax.set_title("Overlay", fontsize=10)
+                ax.axis('off')
+            else:
+                # If we have fewer than 5 examples, turn off the extra axes
+                for i in range(3):
+                    axes[row, col*3+i].axis('off')
+        
+        # Set row labels
+        axes[row, 0].set_ylabel(row_titles[row], fontsize=12, rotation=0, labelpad=70, va='center')
+
+    plt.tight_layout()
+    plt.show()
+    
+    # Clean up hooks to prevent memory leaks
+    grad_cam.remove_hooks()
+
 def evaluate_model(model, test_loader, vit_processor, extract_lbp_fn, class_names):
     """
     Evaluate the trained model on test data (binary classification).
     Prints 5 correct and 5 wrong prediction examples from each class.
+    Generates GradCAM visualizations for predictions.
     """
+    # Determine device
+    device = next(model.parameters()).device
+    
     model.eval()
     y_true, y_pred, y_probs = [], [], []
 
@@ -82,6 +174,7 @@ def evaluate_model(model, test_loader, vit_processor, extract_lbp_fn, class_name
                         wrong_examples[true_label].append(example)
 
     y_true = np.array(y_true)
+    y_pred = np.array(y_pred)
     y_probs = np.array(y_probs)
 
     print("\nClassification Report:")
@@ -110,7 +203,18 @@ def evaluate_model(model, test_loader, vit_processor, extract_lbp_fn, class_name
     except Exception as e:
         print(f"ROC AUC calculation failed: {e}")
 
-    print("\nPlotting all examples in a grid:")
+    print("\nPlotting regular examples in a grid:")
     plot_examples_grid(correct_examples, wrong_examples, class_names)
+    
+    print("\nPlotting examples with GradCAM visualizations:")
+    plot_examples_with_gradcam(
+        correct_examples, 
+        wrong_examples, 
+        class_names, 
+        model,
+        vit_processor, 
+        extract_lbp_fn, 
+        device
+    )
 
     return y_true, y_pred
