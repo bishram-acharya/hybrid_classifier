@@ -1,6 +1,3 @@
-"""
-Evaluation functionality for the hybrid classifier.
-"""
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,10 +9,12 @@ from .utils.visualization import plot_confusion_matrix
 def evaluate_model(model, test_loader, vit_processor, extract_lbp_fn, class_names):
     """
     Evaluate the trained model on test data (binary classification).
+    Prints 5 prediction examples from each class.
     """
     model.eval()
     y_true, y_pred, y_probs = [], [], []
-    
+    class_examples = {0: [], 1: []}  # Dictionary to store example images for each class
+
     with torch.no_grad():
         for batch in tqdm(test_loader, desc="Testing"):
             img_tensor, vit_inputs, lbp_feat, labels = prepare_batch(
@@ -29,7 +28,12 @@ def evaluate_model(model, test_loader, vit_processor, extract_lbp_fn, class_name
             y_true.extend(labels.cpu().numpy())
             y_pred.extend(preds.cpu().numpy())
             y_probs.extend(probs.cpu().numpy())
-    
+
+            # Store examples for each class
+            for i in range(len(labels)):
+                if len(class_examples[labels[i].item()]) < 5:
+                    class_examples[labels[i].item()].append((img_tensor[i], preds[i]))
+
     # Convert to numpy arrays
     y_true = np.array(y_true)
     y_probs = np.array(y_probs)
@@ -59,8 +63,19 @@ def evaluate_model(model, test_loader, vit_processor, extract_lbp_fn, class_name
         plt.legend(loc="lower right")
         plt.grid(True)
         plt.show()
-        
+
     except Exception as e:
         print(f"ROC AUC calculation failed: {e}")
-    
+
+    # Print 5 examples for each class
+    print("\nExample Predictions:")
+    for class_id in [0, 1]:
+        print(f"\nClass {class_names[class_id]} (ID: {class_id}):")
+        for i, (img, pred) in enumerate(class_examples[class_id]):
+            if i < 5:  # Show 5 examples
+                plt.imshow(img.permute(1, 2, 0).cpu().numpy())  # Convert to HxWxC format
+                plt.title(f"Predicted: {class_names[pred.item()]}")
+                plt.axis('off')
+                plt.show()
+
     return y_true, y_pred
