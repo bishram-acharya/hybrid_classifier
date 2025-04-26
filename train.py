@@ -25,8 +25,22 @@ def train_model(model, train_loader, val_loader, vit_processor, extract_lbp_fn, 
     Returns:
         tuple: (train_losses, val_losses, train_accuracies, val_accuracies)
     """
+
+    # Manually setting class counts, although it would be better if i dynamically calculated class counts
+    class_counts = [371, 777]  # [benign, malignant]
+    total = sum(class_counts)
+
+    # Inverse frequency weighting
+    class_weights = [total / c for c in class_counts]
+
+    # normalizing as a good practice
+    class_weights = torch.tensor(class_weights, dtype=torch.float)
+    class_weights = class_weights / class_weights.sum()
+
+    criterion = nn.CrossEntropyLoss(weight=class_weights.to(DEVICE))
+
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
-    criterion = nn.CrossEntropyLoss()
+    
     
     # Training with validation tracking
     train_losses, val_losses = [], []
