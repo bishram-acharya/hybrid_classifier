@@ -22,7 +22,7 @@ class HybridNet(nn.Module):
         if backbone == 'efficientnet':
             self.cnn = efficientnet_b0(weights=EfficientNet_B0_Weights.IMAGENET1K_V1)
             self.cnn.classifier = nn.Identity()
-            self.feature_dim = 1280
+            self.feature_dim = 1280 # Storing for later use
         elif backbone == 'resnet':
             self.cnn = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
             self.cnn.fc = nn.Identity()
@@ -60,7 +60,8 @@ class HybridNet(nn.Module):
         
         # Get ViT features
         with torch.no_grad():
-            vit_out = self.vit(**vit_inputs).last_hidden_state[:, 0, :]  # (B, 768)
+            vit_out = self.vit(**vit_inputs).last_hidden_state[:, 0, :]  
+            # (B, 768) . Pass the input to vit by unpacking vit_input dict, and take all elements of the batch, take their cls token and all features(768) of that token from last hidden state 
         
         # Combine features
         combined = torch.cat([cnn_feat, vit_out, lbp_feat], dim=1)  # (B, total_dim)

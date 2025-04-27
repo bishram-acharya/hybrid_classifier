@@ -54,9 +54,9 @@ def train_model(model, train_loader, val_loader, vit_processor, extract_lbp_fn, 
         for batch in tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs} [Train]"):
             img_tensor, vit_inputs, lbp_feat, labels = prepare_batch(
                 batch, vit_processor, extract_lbp_fn
-            )
+            ) # -> Gets features required for the batch
             
-            optimizer.zero_grad()
+            optimizer.zero_grad() #-> as default behavior is to accumulate gradients across batches we zero it out , so that zero is added to new gradients.
             outputs = model(img_tensor, vit_inputs, lbp_feat)
             loss = criterion(outputs, labels)
             loss.backward()

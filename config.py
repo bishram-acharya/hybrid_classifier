@@ -1,5 +1,5 @@
 """
-Configuration settings for the hybrid classifier project.
+Configuration settings for the hybrid classifier .
 """
 import torch
 import os
@@ -8,7 +8,7 @@ import os
 TRAIN_DIR = '/kaggle/input/breakhis-400x/BreaKHis 400X/train/'
 TEST_DIR = '/kaggle/input/breakhis-400x/BreaKHis 400X/test/'
 
-# Training parameters
+# Default Training parameters
 BATCH_SIZE = 16
 NUM_WORKERS = 2
 NUM_EPOCHS = 6
@@ -21,7 +21,7 @@ LBP_DIM = 10
 VIT_DIM = 768
 VIT_MODEL = "google/vit-base-patch16-224-in21k"
 
-# Model selection - choose between 'efficientnet' and 'resnet'
+# Model selection - choose between 'efficientnet' and 'resnet' . Default efficient net
 BACKBONE_MODEL = 'efficientnet'
 
 # Seeds for reproducibility

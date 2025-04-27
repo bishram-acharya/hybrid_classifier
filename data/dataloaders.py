@@ -44,7 +44,9 @@ def get_dataloaders(train_dir, test_dir):
         test_dir (str): Path to test data directory
         
     Returns:
-        tuple: (train_loader, val_loader, test_loader, num_classes)
+        tuple: (train_loader, val_loader, test_loader, num_classes, class_names)
+
+        The dataloader is an iterable that we can use directly in loop to get batches of data
     """
     # Set seeds for reproducibility
     torch.manual_seed(SEED)
@@ -56,7 +58,7 @@ def get_dataloaders(train_dir, test_dir):
     train_transforms = get_transforms(train=True)
     test_transforms = get_transforms(train=False)
     
-    full_train_dataset = datasets.ImageFolder(train_dir, transform=train_transforms)
+    full_train_dataset = datasets.ImageFolder(train_dir, transform=train_transforms) # Imagefolder returns a dataset where each item is a tuple of(image,labels)
     
     # Split into train and validation sets
     train_size = int((1 - VAL_SPLIT) * len(full_train_dataset))
@@ -67,7 +69,7 @@ def get_dataloaders(train_dir, test_dir):
     val_dataset.dataset.transform = test_transforms
     
     # Create dataloaders
-    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKERS)
+    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKERS) # shuffle allows randomly mixed up data each time we loop through the dataset
     val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=NUM_WORKERS)
     
     test_dataset = datasets.ImageFolder(test_dir, transform=test_transforms)
