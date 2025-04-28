@@ -5,7 +5,7 @@ from tqdm import tqdm
 from sklearn.metrics import classification_report, roc_auc_score, roc_curve
 from .models.hybridnet import prepare_batch
 from .utils.visualization import plot_confusion_matrix
-from .utils.gradcam import GradCAM
+from .utils.gradcam import MultiLayerGradCAM  # Updated import
 
 def plot_examples_grid(correct_examples, wrong_examples, class_names):
     """
@@ -46,47 +46,33 @@ def plot_examples_grid(correct_examples, wrong_examples, class_names):
     plt.tight_layout()
     plt.show()
 
-def plot_examples_with_gradcam(correct_examples, wrong_examples, class_names, model, vit_processor, extract_lbp_fn, device):
+def plot_examples_with_multi_layer_gradcam(correct_examples, wrong_examples, class_names, model, vit_processor, extract_lbp_fn, device):
     """
-    Plot examples with GradCAM visualizations in a grid
+    Plot examples with GradCAM visualizations for multiple layers in a grid
     """
-    # Initialize GradCAM
-    grad_cam = GradCAM(model)
+    # Initialize MultiLayerGradCAM
+    multi_cam = MultiLayerGradCAM(model)
     
-    # Create figure with 4 rows (2 classes x correct/wrong) and 5 columns
-    # Each column has 3 images (original, heatmap, overlay)
-    fig, axes = plt.subplots(4, 15, figsize=(25, 16))
-    fig.subplots_adjust(hspace=0.4, wspace=0.1)
-    
-    row_titles = [
-        f"Correct - {class_names[0]}",
-        f"Wrong - {class_names[0]}",
-        f"Correct - {class_names[1]}",
-        f"Wrong - {class_names[1]}"
-    ]
-    
-    # Process each row
-    for row in range(4):
-        if row == 0:
-            examples = correct_examples[0]
-            title = f"Correct - {class_names[0]}"
-        elif row == 1:
-            examples = wrong_examples[0]
-            title = f"Wrong - {class_names[0]}"
-        elif row == 2:
-            examples = correct_examples[1]
-            title = f"Correct - {class_names[1]}"
-        elif row == 3:
-            examples = wrong_examples[1]
-            title = f"Wrong - {class_names[1]}"
-        
-        # For each example in the row (max 5)
-        for col in range(5):
-            if col < len(examples):
-                img_tensor, true_label, pred_label, prob = examples[col]
+    # For each category (correct/wrong for each class)
+    for category_idx, (category_name, examples_dict) in enumerate([
+        ("Correct Examples", correct_examples),
+        ("Wrong Examples", wrong_examples)
+    ]):
+        # For each class
+        for class_idx, class_name in enumerate(class_names):
+            examples = examples_dict[class_idx]
+            if not examples:
+                continue
                 
-                # Generate GradCAM visualizations
-                orig, heatmap, overlay = grad_cam.process_example(
+            # For each example in this category and class
+            for ex_idx, (img_tensor, true_label, pred_label, prob) in enumerate(examples):
+                # Create a figure for this example with all layer visualizations
+                fig = plt.figure(figsize=(20, 10))
+                fig.suptitle(f"{category_name} - {class_name}: True={class_names[true_label]}, Pred={class_names[pred_label]} ({prob:.2f})", 
+                             fontsize=16)
+                
+                # Process the example to get GradCAM visualizations for all layers
+                orig_img, layer_results = multi_cam.process_example(
                     img_tensor, 
                     pred_label, 
                     model, 
@@ -95,40 +81,44 @@ def plot_examples_with_gradcam(correct_examples, wrong_examples, class_names, mo
                     device
                 )
                 
-                # Plot original image
-                ax = axes[row, col*3]
-                ax.imshow(orig)
-                if row == 0:
-                    ax.set_title(f"Example {col+1}", fontsize=10)
-                ax.set_xlabel(f"T:{class_names[true_label]}\nP:{class_names[pred_label]} ({prob:.2f})", fontsize=8)
-                ax.axis('off')
+                # Total number of visualizations: original + (heatmap + overlay) for each layer
+                num_layers = len(layer_results)
                 
-                # Plot heatmap
-                ax = axes[row, col*3+1]
-                ax.imshow(heatmap)
-                if row == 0:
-                    ax.set_title("Heatmap", fontsize=10)
-                ax.axis('off')
+                # Create a 2-row grid: top row for original + heatmaps, bottom row for overlays
+                gs = fig.add_gridspec(2, num_layers + 1)
                 
-                # Plot overlay
-                ax = axes[row, col*3+2]
-                ax.imshow(overlay)
-                if row == 0:
-                    ax.set_title("Overlay", fontsize=10)
-                ax.axis('off')
-            else:
-                # If we have fewer than 5 examples, turn off the extra axes
-                for i in range(3):
-                    axes[row, col*3+i].axis('off')
-        
-        # Set row labels
-        axes[row, 0].set_ylabel(row_titles[row], fontsize=12, rotation=0, labelpad=70, va='center')
-
-    plt.tight_layout()
-    plt.show()
+                # Original image
+                ax_orig = fig.add_subplot(gs[0, 0])
+                ax_orig.imshow(orig_img)
+                ax_orig.set_title('Original Image')
+                ax_orig.axis('off')
+                
+                # Keep same position in bottom row empty for symmetry
+                ax_empty = fig.add_subplot(gs[1, 0])
+                ax_empty.axis('off')
+                
+                # Plot each layer's heatmap and overlay
+                for i, (layer_name, (heatmap, overlay)) in enumerate(layer_results.items(), 1):
+                    # Format layer name for display
+                    display_name = layer_name.replace('_', ' ').title()
+                    
+                    # Heatmap (top row)
+                    ax_heat = fig.add_subplot(gs[0, i])
+                    ax_heat.imshow(heatmap)
+                    ax_heat.set_title(f'{display_name}\nHeatmap')
+                    ax_heat.axis('off')
+                    
+                    # Overlay (bottom row)
+                    ax_over = fig.add_subplot(gs[1, i])
+                    ax_over.imshow(overlay)
+                    ax_over.set_title(f'{display_name}\nOverlay')
+                    ax_over.axis('off')
+                
+                plt.tight_layout()
+                plt.show()
     
     # Clean up hooks to prevent memory leaks
-    grad_cam.remove_hooks()
+    multi_cam.remove_hooks()
 
 def evaluate_model(model, test_loader, vit_processor, extract_lbp_fn, class_names):
     """
@@ -206,8 +196,8 @@ def evaluate_model(model, test_loader, vit_processor, extract_lbp_fn, class_name
     print("\nPlotting regular examples in a grid:")
     plot_examples_grid(correct_examples, wrong_examples, class_names)
     
-    print("\nPlotting examples with GradCAM visualizations:")
-    plot_examples_with_gradcam(
+    print("\nPlotting examples with multi-layer GradCAM visualizations:")
+    plot_examples_with_multi_layer_gradcam(
         correct_examples, 
         wrong_examples, 
         class_names, 
